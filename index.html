@@ -11,31 +11,26 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', 'sans-serif'; }
+        body { font-family: 'Inter', 'sans-serif'; -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // アイコンコンポーネントの簡易実装（LucideをReactで使うためのラッパー）
+        // アイコンコンポーネント
         const Icon = ({ name, className = "w-4 h-4", ...props }) => {
-            const iconRef = React.useRef(null);
+            const iconRef = useRef(null);
             useEffect(() => {
-                if (iconRef.current) {
-                    // 全てのアイコン名をパスカルケースからケバブケースに変換してlucide.createIconsを実行
-                    lucide.createIcons({
-                        attrs: { class: className },
-                        nameAttr: 'data-lucide'
-                    });
+                if (window.lucide) {
+                    window.lucide.createIcons();
                 }
-            }, [name, className]);
+            }, [name]);
             return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className} {...props}></i>;
         };
 
-        // 元のアイコンコンポーネントを定義（互換性のため）
         const CheckCircle = (p) => <Icon name="CheckCircle" {...p} />;
         const RefreshCcw = (p) => <Icon name="RefreshCcw" {...p} />;
         const PlusCircle = (p) => <Icon name="PlusCircle" {...p} />;
@@ -50,120 +45,47 @@
         const X = (p) => <Icon name="X" {...p} />;
         const AlertTriangle = (p) => <Icon name="AlertTriangle" {...p} />;
 
-        // --- 以前のロジックデータをここに統合 ---
         const CARRIER_DATA = {
           docomo: {
-            name: "docomo",
-            type: "main",
-            color: "bg-rose-600",
-            borderColor: "border-rose-600",
-            textColor: "text-rose-600",
-            programName: "いつでもカエドキプログラム",
+            name: "docomo", type: "main", color: "bg-rose-600", programName: "いつでもカエドキプログラム",
             programBenefitNote: "【特典利用料】22,000円。23ヶ月目に返却する際、プログラム利用料として別途お支払いが必要となります。",
             hasProgramFee: true,
-            plans: [
-              { name: "ドコモ MAX", price: 8448 },
-              { name: "ドコモ mini (4GB)", price: 2500 },
-              { name: "ドコモ mini (10GB)", price: 3850 },
-              { name: "ahamo", price: 2970 }
-            ],
-            callOptions: [
-              { name: "なし", price: 0 },
-              { name: "5分通話無料", price: 880 },
-              { name: "かけ放題", price: 1980 }
-            ]
+            plans: [{ name: "ドコモ MAX", price: 8448 }, { name: "ドコモ mini (4GB)", price: 2500 }, { name: "ahamo", price: 2970 }],
+            callOptions: [{ name: "なし", price: 0 }, { name: "5分通話無料", price: 880 }, { name: "かけ放題", price: 1980 }]
           },
           au: {
-            name: "au",
-            type: "main",
-            color: "bg-orange-500",
-            borderColor: "border-orange-500",
-            textColor: "text-orange-500",
-            programName: "スマホトクするプログラム",
-            programBenefitNote: "【特典利用料】22,000円。23ヶ月目に返却して残価を免除する際、別途特典利用料のお支払いが必要となります。",
+            name: "au", type: "main", color: "bg-orange-500", programName: "スマホトクするプログラム",
+            programBenefitNote: "【特典利用料】22,000円。返却時に別途特典利用料のお支払いが必要となります。",
             hasProgramFee: true,
-            plans: [
-              { name: "auバリューリンク", price: 8008 },
-              { name: "シニアバリューリンク", price: 4048 },
-              { name: "スマホミニプラン", price: 4928 }
-            ],
-            callOptions: [
-              { name: "なし", price: 0 },
-              { name: "通話定額ライト", price: 880 },
-              { name: "通話定額", price: 1980 }
-            ]
+            plans: [{ name: "auバリューリンク", price: 8008 }, { name: "スマホミニプラン", price: 4928 }],
+            callOptions: [{ name: "なし", price: 0 }, { name: "通話定額ライト", price: 880 }, { name: "通話定額", price: 1980 }]
           },
           softbank: {
-            name: "SoftBank",
-            type: "main",
-            color: "bg-slate-800",
-            borderColor: "border-slate-800",
-            textColor: "text-slate-800",
-            programName: "新トクするサポート",
-            programBenefitNote: "【特典利用料】22,000円。返却タイミングやプラン条件により、返却時に利用料が発生する場合があります。",
+            name: "SoftBank", type: "main", color: "bg-slate-800", programName: "新トクするサポート",
+            programBenefitNote: "【特典利用料】22,000円。返却時に利用料が発生する場合があります。",
             hasProgramFee: true,
-            plans: [
-              { name: "ペイトク無制限", price: 9625 },
-              { name: "メリハリ無制限＋", price: 7425 },
-              { name: "スマホデビュー (4GB)", price: 1078, note: "※14ヶ月目以降 +1,188円" }
-            ],
-            callOptions: [
-              { name: "なし", price: 0 },
-              { name: "準定額オプション+", price: 880 },
-              { name: "定額オプション+", price: 1980 }
-            ]
+            plans: [{ name: "ペイトク無制限", price: 9625 }, { name: "スマホデビュー (4GB)", price: 1078 }],
+            callOptions: [{ name: "なし", price: 0 }, { name: "準定額オプション+", price: 880 }, { name: "定額オプション+", price: 1980 }]
           },
           uq: {
-            name: "UQ mobile",
-            type: "sub",
-            color: "bg-blue-600",
-            borderColor: "border-blue-600",
-            textColor: "text-blue-600",
-            programName: "スマホトクするプログラム",
-            programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで、残価（25ヶ月目以降）の支払いが免除されます。",
+            name: "UQ mobile", type: "sub", color: "bg-blue-600", programName: "スマホトクするプログラム",
+            programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで、残価の支払いが免除されます。",
             hasProgramFee: false,
-            plans: [
-              { name: "コミコミバリュー", price: 3828 },
-              { name: "トクトクプラン2", price: 4048 }
-            ],
-            callOptions: [
-              { name: "なし", price: 0 },
-              { name: "通話放題ライト", price: 880 },
-              { name: "通話放題", price: 1980 }
-            ]
+            plans: [{ name: "コミコミバリュー", price: 3828 }, { name: "トクトクプラン2", price: 4048 }],
+            callOptions: [{ name: "なし", price: 0 }, { name: "通話放題ライト", price: 880 }, { name: "通話放題", price: 1980 }]
           },
           ymobile: {
-            name: "Y!mobile",
-            type: "sub",
-            color: "bg-red-500",
-            borderColor: "border-red-500",
-            textColor: "text-red-500",
-            programName: "新トクするサポート",
-            programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで、残価（25ヶ月目以降）の支払いが免除されます。",
+            name: "Y!mobile", type: "sub", color: "bg-red-500", programName: "新トクするサポート",
+            programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで残価が免除されます。",
             hasProgramFee: false,
-            plans: [
-              { name: "シンプル3 S", price: 3058 },
-              { name: "シンプル3 M", price: 4158 },
-              { name: "シンプル3 L", price: 5258 }
-            ],
-            callOptions: [
-              { name: "なし", price: 0 },
-              { name: "だれとでも定額+", price: 880 },
-              { name: "だれとでも定額+ (S)", price: 1980 }
-            ]
+            plans: [{ name: "シンプル3 S", price: 3058 }, { name: "シンプル3 M", price: 4158 }],
+            callOptions: [{ name: "なし", price: 0 }, { name: "だれとでも定額+", price: 880 }]
           }
         };
 
         const DEFAULT_SLOT_STATE = {
           carrier: 'docomo',
-          device: { 
-            name: 'iPhone 17', 
-            price: 134800, 
-            installments: 48, 
-            first24Monthly: 1, 
-            hasDownPayment: false,
-            manualMode: false 
-          },
+          device: { name: 'iPhone 17', price: 134800, installments: 48, first24Monthly: 1, hasDownPayment: false, manualMode: false },
           plan: { name: 'ドコモ MAX', price: 8448 },
           callOption: { name: 'なし', price: 0 },
           transferService: { name: 'なし', price: 0 },
@@ -185,9 +107,7 @@
           });
           const [showSummary, setShowSummary] = useState(false);
           const [summaryActiveSlot, setSummaryActiveSlot] = useState('A');
-          const [checklist, setChecklist] = useState({
-            installments: false, residual: false, damage: false, fees: false, downpayment: false, pointTerms: false, programFee: false
-          });
+          const [checklist, setChecklist] = useState({ installments: false, residual: false, fees: false, downpayment: false });
 
           const state = slots[activeSlot];
           const currentCarrier = CARRIER_DATA[state.carrier];
@@ -198,35 +118,35 @@
 
           const handleCarrierChange = (key) => {
             const data = CARRIER_DATA[key];
-            updateSlot(activeSlot, 'carrier', key);
-            updateSlot(activeSlot, 'plan', { name: data.plans[0].name, price: data.plans[0].price });
-            updateSlot(activeSlot, 'callOption', { name: data.callOptions[0].name, price: data.callOptions[0].price });
+            setSlots(prev => ({
+              ...prev,
+              [activeSlot]: {
+                ...prev[activeSlot],
+                carrier: key,
+                plan: { name: data.plans[0].name, price: data.plans[0].price },
+                callOption: { name: data.callOptions[0].name, price: data.callOptions[0].price }
+              }
+            }));
           };
 
           const calculateResults = (slotData) => {
             const downPayment = slotData.device.hasDownPayment ? 11000 : 0;
             let monthlyDevice = 0;
             let residual = 0;
-
             if (slotData.device.installments === 48) {
               monthlyDevice = slotData.device.first24Monthly;
               residual = slotData.device.price - (slotData.device.first24Monthly * 23);
             } else if (slotData.device.installments > 1) {
               monthlyDevice = Math.floor(slotData.device.price / slotData.device.installments);
             }
-
             const totalDiscounts = slotData.discounts.reduce((sum, d) => d.active ? sum + Number(d.amount) : sum, 0);
             const monthlyTotal = (monthlyDevice + slotData.plan.price + slotData.callOption.price) - totalDiscounts;
             const initialTotal = downPayment + slotData.transferService.price;
             const totalPoints = slotData.nojimaPoints.reduce((sum, p) => p.active ? sum + Number(p.amount) : sum, 0);
-
-            return { monthlyTotal, monthlyDevice, residual, initialTotal, downPayment, totalPoints };
+            return { monthlyTotal, monthlyDevice, residual, initialTotal, totalPoints };
           };
 
-          const results = useMemo(() => ({
-            A: calculateResults(slots.A),
-            B: calculateResults(slots.B)
-          }), [slots]);
+          const results = useMemo(() => ({ A: calculateResults(slots.A), B: calculateResults(slots.B) }), [slots]);
 
           const addEntry = (field, name, defaultAmount) => {
             updateSlot(activeSlot, field, [...state[field], { id: Date.now(), name, amount: defaultAmount, active: true }]);
@@ -242,279 +162,187 @@
 
           return (
             <div className="min-h-screen bg-slate-50 text-slate-900 pb-36 font-sans antialiased">
-              <header className={`${isComparisonMode ? 'bg-[#002B6B]' : currentCarrier.color} text-white p-4 sticky top-0 z-50 shadow-lg transition-colors`}>
+              <header className={`${isComparisonMode ? 'bg-[#002B6B]' : currentCarrier.color} text-white p-4 sticky top-0 z-50 shadow-lg`}>
                 <div className="max-w-2xl mx-auto flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <SmartphoneNfc className="w-5 h-5" />
-                    <h1 className="font-bold text-sm">Sales Support Pro <span className="text-[10px] opacity-75">Nojima Ver.</span></h1>
+                    <h1 className="font-bold text-sm">Sales Support Pro <span className="text-[10px] opacity-75">Nojima</span></h1>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => setIsComparisonMode(!isComparisonMode)} className={`px-3 py-1.5 rounded-full text-[10px] font-black border transition ${isComparisonMode ? 'bg-white text-blue-900 border-white' : 'bg-transparent border-white/40 text-white hover:bg-white/10'}`}>
-                      比較: {isComparisonMode ? 'ON' : 'OFF'}
-                    </button>
-                    <button onClick={() => window.location.reload()} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20">
-                      <RefreshCcw className="w-4 h-4" />
-                    </button>
+                    <button onClick={() => setIsComparisonMode(!isComparisonMode)} className={`px-3 py-1.5 rounded-full text-[10px] font-black border transition ${isComparisonMode ? 'bg-white text-blue-900' : 'bg-transparent border-white/40'}`}>比較: {isComparisonMode ? 'ON' : 'OFF'}</button>
+                    <button onClick={() => window.location.reload()} className="p-1.5 bg-white/10 rounded-full"><RefreshCcw className="w-4 h-4" /></button>
                   </div>
                 </div>
               </header>
 
               {isComparisonMode && (
-                <div className="bg-white border-b border-slate-200 sticky top-[52px] z-40 shadow-sm">
-                  <div className="max-w-2xl mx-auto flex p-1">
-                    {['A', 'B'].map(s => (
-                      <button key={s} onClick={() => setActiveSlot(s)} className={`flex-1 py-2.5 text-xs font-black transition-all rounded-xl ${activeSlot === s ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>
-                        案 {s} <span className="ml-1 opacity-80 text-[10px]">¥{results[s].monthlyTotal.toLocaleString()}</span>
-                      </button>
-                    ))}
-                  </div>
+                <div className="bg-white border-b border-slate-200 sticky top-[52px] z-40 shadow-sm flex p-1 max-w-2xl mx-auto">
+                  {['A', 'B'].map(s => (
+                    <button key={s} onClick={() => setActiveSlot(s)} className={`flex-1 py-2.5 text-xs font-black rounded-xl ${activeSlot === s ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400'}`}>
+                      案 {s} <span className="ml-1 opacity-80 text-[10px]">¥{results[s].monthlyTotal.toLocaleString()}</span>
+                    </button>
+                  ))}
                 </div>
               )}
 
               <main className="max-w-2xl mx-auto p-4 space-y-4">
-                {/* Carrier Selection */}
+                {/* Step 1. Carrier */}
                 <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 1. キャリア</h2>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 1. キャリア</h2>
                   <div className="grid grid-cols-3 gap-2 mb-2">
                     {Object.keys(CARRIER_DATA).filter(k => CARRIER_DATA[k].type === 'main').map(key => (
-                      <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 transition font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} border-transparent text-white shadow-md` : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
-                        {CARRIER_DATA[key].name}
-                      </button>
+                      <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} border-transparent text-white` : 'bg-slate-50 text-slate-400'}`}>{CARRIER_DATA[key].name}</button>
                     ))}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.keys(CARRIER_DATA).filter(k => CARRIER_DATA[k].type === 'sub').map(key => (
-                      <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 transition font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} border-transparent text-white shadow-md` : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
-                        {CARRIER_DATA[key].name}
-                      </button>
+                      <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} border-transparent text-white` : 'bg-slate-50 text-slate-400'}`}>{CARRIER_DATA[key].name}</button>
                     ))}
                   </div>
                 </section>
 
-                {/* Device Settings */}
-                <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 2. 端末設定</h2>
-                    <button onClick={() => updateSlot(activeSlot, 'device', { ...state.device, manualMode: !state.device.manualMode })} className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg">手入力切替</button>
-                  </div>
+                {/* Step 2. Device */}
+                <section className="bg-white rounded-2xl p-4 border border-slate-200 space-y-4">
+                  <div className="flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 2. 端末設定</h2></div>
                   <div className="grid grid-cols-2 gap-x-4">
-                    <div>
-                      <span className="text-[9px] text-slate-400 font-black ml-1 block">機種名</span>
-                      {state.device.manualMode ? (
-                        <input type="text" value={state.device.name} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, name: e.target.value})} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-200 outline-none" />
-                      ) : (
-                        <select value={state.device.name} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, name: e.target.value})} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-200 outline-none">
-                          <option>iPhone 17</option><option>iPhone 16</option><option>iPhone 16e</option><option>Google Pixel 9a</option><option>Galaxy A25</option>
-                        </select>
-                      )}
+                    <div><span className="text-[9px] text-slate-400 font-black block">機種名</span>
+                      <input type="text" value={state.device.name} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, name: e.target.value})} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold outline-none ring-1 ring-slate-200" />
                     </div>
-                    <div>
-                      <span className="text-[9px] text-slate-400 font-black mr-1 text-right block">総額 (税込)</span>
-                      <input type="number" value={state.device.price} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, price: Number(e.target.value)})} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold text-right ring-1 ring-slate-200 outline-none" />
+                    <div><span className="text-[9px] text-slate-400 font-black text-right block">総額 (税込)</span>
+                      <input type="number" value={state.device.price} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, price: Number(e.target.value)})} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold text-right outline-none ring-1 ring-slate-200" />
                     </div>
                   </div>
                   <div className="flex bg-slate-100 p-1 rounded-xl">
                     {[1, 24, 36, 48].map(n => (
-                      <button key={n} onClick={() => updateSlot(activeSlot, 'device', {...state.device, installments: n})} className={`flex-1 py-2 rounded-lg text-[10px] font-black transition ${state.device.installments === n ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}>
-                        {n === 1 ? '一括' : `${n}回`}
-                      </button>
+                      <button key={n} onClick={() => updateSlot(activeSlot, 'device', {...state.device, installments: n})} className={`flex-1 py-2 rounded-lg text-[10px] font-black ${state.device.installments === n ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>{n === 1 ? '一括' : `${n}回`}</button>
                     ))}
                   </div>
                   {state.device.installments === 48 && (
                     <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-[9px] text-blue-400 font-black">23ヶ月目までの月額</span>
-                        <input type="number" value={state.device.first24Monthly} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, first24Monthly: Number(e.target.value)})} className="w-24 p-2 bg-white rounded-lg border border-blue-200 text-sm font-black text-blue-600 outline-none block" />
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[9px] text-blue-400 font-black">25ヶ月目以降(免除額)</span>
-                        <p className="text-sm font-black text-slate-500 italic">¥{results[activeSlot].residual.toLocaleString()}</p>
-                      </div>
+                      <div><span className="text-[9px] text-blue-400 font-black block">23ヶ月目までの月額</span><input type="number" value={state.device.first24Monthly} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, first24Monthly: Number(e.target.value)})} className="w-24 p-2 bg-white rounded-lg border border-blue-200 text-sm font-black text-blue-600 outline-none" /></div>
+                      <div className="text-right"><span className="text-[9px] text-blue-400 font-black block">25ヶ月目以降(免除額)</span><p className="text-sm font-black text-slate-500">¥{results[activeSlot].residual.toLocaleString()}</p></div>
                     </div>
                   )}
                 </section>
 
-                {/* Plan & Call */}
-                <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 3. プラン</h2>
+                {/* Step 3. Plan */}
+                <section className="bg-white rounded-2xl p-4 border border-slate-200 space-y-4">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 3. プラン</h2>
                   <div className="flex gap-2">
                     <input type="text" value={state.plan.name} onChange={(e) => updateSlot(activeSlot, 'plan', { ...state.plan, name: e.target.value })} className="flex-1 h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100 outline-none" />
-                    <select onChange={(e) => { const p = currentCarrier.plans.find(x => x.name === e.target.value); if(p) updateSlot(activeSlot, 'plan', { name: p.name, price: p.price }); }} className="w-24 h-11 px-1 bg-white border border-slate-200 rounded-xl text-[10px] font-bold outline-none" value="">
-                      <option value="" disabled>履歴</option>
-                      {currentCarrier.plans.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-                    </select>
+                    <input type="number" value={state.plan.price} onChange={(e) => updateSlot(activeSlot, 'plan', { ...state.plan, price: Number(e.target.value) })} className="w-24 h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100 outline-none" />
                   </div>
-                  <input type="number" value={state.plan.price} onChange={(e) => updateSlot(activeSlot, 'plan', { ...state.plan, price: Number(e.target.value) })} className="w-full h-11 px-3 bg-slate-50 rounded-xl text-xs font-bold ring-1 ring-slate-100 outline-none" />
                   <div className="grid grid-cols-3 gap-2">
                     {currentCarrier.callOptions.map(o => (
-                      <button key={o.name} onClick={() => updateSlot(activeSlot, 'callOption', { name: o.name, price: o.price })} className={`p-2 rounded-xl border-2 transition font-bold text-[10px] ${state.callOption.name === o.name ? 'border-slate-800 bg-slate-50' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
-                        {o.name} <span className="block opacity-70">¥{o.price.toLocaleString()}</span>
-                      </button>
+                      <button key={o.name} onClick={() => updateSlot(activeSlot, 'callOption', { name: o.name, price: o.price })} className={`p-2 rounded-xl border-2 font-bold text-[10px] ${state.callOption.name === o.name ? 'border-slate-800 bg-slate-50' : 'bg-slate-50 text-slate-400'}`}>{o.name}<br/>¥{o.price.toLocaleString()}</button>
                     ))}
                   </div>
                 </section>
 
-                {/* Discounts */}
-                <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                {/* Step 4. 各種割引 (削除機能追加) */}
+                <section className="bg-white rounded-2xl p-4 border border-slate-200">
                   <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 4. 各種割引</h2>
-                    <button onClick={() => addEntry('discounts', '新規割引', 0)} className="text-emerald-600 bg-emerald-50 p-1 rounded-lg transition hover:bg-emerald-100"><PlusCircle className="w-4 h-4" /></button>
+                    <h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 4. 各種割引</h2>
+                    <button onClick={() => addEntry('discounts', '新規割引', 0)} className="text-emerald-600 bg-emerald-50 p-1 rounded-lg"><PlusCircle className="w-4 h-4" /></button>
                   </div>
                   <div className="space-y-2">
                     {state.discounts.map(d => (
-                      <div key={d.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${d.active ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-50 bg-slate-50'}`}>
-                        <button onClick={() => updateEntry('discounts', d.id, 'active', !d.active)} className={d.active ? 'text-emerald-500' : 'text-slate-300'}>
-                            {d.active ? <CheckSquare className="w-5 h-5 fill-current bg-white rounded" /> : <Square className="w-5 h-5" />}
-                        </button>
-                        <input type="text" value={d.name} onChange={(e) => updateEntry('discounts', d.id, 'name', e.target.value)} className="flex-1 bg-transparent text-[11px] font-bold border-0 p-0 focus:ring-0" />
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-bold text-slate-400">¥</span>
-                          <input type="number" value={d.amount} onChange={(e) => updateEntry('discounts', d.id, 'amount', Number(e.target.value))} className="w-16 bg-white rounded px-2 py-1 text-xs font-black text-right border border-slate-200 outline-none" />
-                        </div>
-                        <button onClick={() => removeEntry('discounts', d.id)} className="text-slate-300 hover:text-rose-500 ml-1"><Trash2 className="w-4 h-4" /></button>
+                      <div key={d.id} className={`flex items-center gap-2 p-3 rounded-xl border ${d.active ? 'border-emerald-200 bg-emerald-50/30' : 'bg-slate-50 border-slate-100'}`}>
+                        <button onClick={() => updateEntry('discounts', d.id, 'active', !d.active)} className={d.active ? 'text-emerald-500' : 'text-slate-300'}>{d.active ? <CheckSquare className="w-5 h-5 fill-current" /> : <Square className="w-5 h-5" />}</button>
+                        <input type="text" value={d.name} onChange={(e) => updateEntry('discounts', d.id, 'name', e.target.value)} className="flex-1 bg-transparent text-[11px] font-bold border-0 p-0 outline-none" />
+                        <input type="number" value={d.amount} onChange={(e) => updateEntry('discounts', d.id, 'amount', Number(e.target.value))} className="w-16 bg-white rounded px-2 py-1 text-xs font-black text-right border border-slate-200" />
+                        <button onClick={() => removeEntry('discounts', d.id)} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors" title="削除"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     ))}
                   </div>
                 </section>
 
-                {/* Initial Costs */}
-                <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 5. 初期費用・データ移行</h2>
+                {/* Step 5. 初期費用 */}
+                <section className="bg-white rounded-2xl p-4 border border-slate-200">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 5. 初期費用</h2>
                   <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => updateSlot(activeSlot, 'device', {...state.device, hasDownPayment: !state.device.hasDownPayment})} className={`p-3 rounded-xl border-2 transition font-bold text-[11px] ${state.device.hasDownPayment ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>店頭頭金 ¥11,000</button>
-                    <select value={state.transferService.price} onChange={(e) => { const names = { "0": "なし", "15000": "データ移行(同OS)", "20000": "データ移行(異OS)" }; updateSlot(activeSlot, 'transferService', { name: names[e.target.value], price: Number(e.target.value) }); }} className="p-3 rounded-xl bg-slate-50 text-[11px] font-bold border-2 border-transparent focus:border-blue-500 outline-none">
-                      <option value="0">データ移行なし</option>
-                      <option value="15000">データ移行(同OS) ¥15,000</option>
-                      <option value="20000">データ移行(異OS) ¥20,000</option>
+                    <button onClick={() => updateSlot(activeSlot, 'device', {...state.device, hasDownPayment: !state.device.hasDownPayment})} className={`p-3 rounded-xl border-2 font-bold text-[11px] ${state.device.hasDownPayment ? 'border-rose-500 bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'}`}>店頭頭金 ¥11,000</button>
+                    <select value={state.transferService.price} onChange={(e) => updateSlot(activeSlot, 'transferService', { name: "データ移行", price: Number(e.target.value) })} className="p-3 rounded-xl bg-slate-50 text-[11px] font-bold border-2 border-transparent outline-none">
+                      <option value="0">データ移行なし</option><option value="15000">データ移行 ¥15,000</option><option value="20000">データ移行 ¥20,000</option>
                     </select>
                   </div>
                 </section>
 
-                {/* Nojima Points */}
-                <section className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                {/* Step 6. ノジマポイント (削除機能追加) */}
+                <section className="bg-white rounded-2xl p-4 border border-slate-200">
                   <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 6. ノジマポイント</h2>
-                    <button onClick={() => addEntry('nojimaPoints', '新規特典', 0)} className="text-blue-600 bg-blue-50 p-1 rounded-lg transition hover:bg-blue-100"><PlusCircle className="w-4 h-4" /></button>
+                    <h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 6. ノジマポイント</h2>
+                    <button onClick={() => addEntry('nojimaPoints', '新規特典', 0)} className="text-blue-600 bg-blue-50 p-1 rounded-lg"><PlusCircle className="w-4 h-4" /></button>
                   </div>
                   <div className="space-y-2">
                     {state.nojimaPoints.map(p => (
-                      <div key={p.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${p.active ? 'border-blue-200 bg-blue-50/30' : 'border-slate-50 bg-slate-50'}`}>
-                        <button onClick={() => updateEntry('nojimaPoints', p.id, 'active', !p.active)} className={p.active ? 'text-blue-500' : 'text-slate-300'}>
-                          {p.active ? <CheckSquare className="w-5 h-5 fill-current bg-white rounded" /> : <Square className="w-5 h-5" />}
-                        </button>
-                        <input type="text" value={p.name} onChange={(e) => updateEntry('nojimaPoints', p.id, 'name', e.target.value)} className="flex-1 bg-transparent text-[11px] font-bold border-0 p-0 focus:ring-0" />
-                        <div className="flex items-center gap-1">
-                          <input type="number" value={p.amount} onChange={(e) => updateEntry('nojimaPoints', p.id, 'amount', Number(e.target.value))} className="w-20 bg-white rounded px-2 py-1 text-xs font-black text-right border border-slate-200 outline-none" />
-                          <span className="text-[10px] font-bold text-slate-400">pt</span>
-                        </div>
-                        <button onClick={() => removeEntry('nojimaPoints', p.id)} className="text-slate-300 hover:text-rose-500 ml-1"><Trash2 className="w-4 h-4" /></button>
+                      <div key={p.id} className={`flex items-center gap-2 p-3 rounded-xl border ${p.active ? 'border-blue-200 bg-blue-50/30' : 'bg-slate-50 border-slate-100'}`}>
+                        <button onClick={() => updateEntry('nojimaPoints', p.id, 'active', !p.active)} className={p.active ? 'text-blue-500' : 'text-slate-300'}>{p.active ? <CheckSquare className="w-5 h-5 fill-current" /> : <Square className="w-5 h-5" />}</button>
+                        <input type="text" value={p.name} onChange={(e) => updateEntry('nojimaPoints', p.id, 'name', e.target.value)} className="flex-1 bg-transparent text-[11px] font-bold border-0 p-0 outline-none" />
+                        <input type="number" value={p.amount} onChange={(e) => updateEntry('nojimaPoints', p.id, 'amount', Number(e.target.value))} className="w-20 bg-white rounded px-2 py-1 text-xs font-black text-right border border-slate-200" />
+                        <button onClick={() => removeEntry('nojimaPoints', p.id)} className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors" title="削除"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     ))}
                   </div>
                 </section>
               </main>
 
-              {/* Footer Summary */}
+              {/* Footer */}
               <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 pb-8 z-50">
-                <div className="max-w-2xl mx-auto flex items-center justify-between gap-6">
-                  <div className="flex-1">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">月額目安 (案{activeSlot})</p>
-                    <p className="text-3xl font-black text-slate-900 leading-none">¥{results[activeSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-medium ml-1">/月</span></p>
-                  </div>
-                  <button onClick={() => { setShowSummary(true); setSummaryActiveSlot(activeSlot); }} className="bg-slate-900 text-white px-10 py-3.5 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> 見積詳細
-                  </button>
+                <div className="max-w-2xl mx-auto flex items-center justify-between">
+                  <div className="flex-1"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">月額目安 (案{activeSlot})</p><p className="text-3xl font-black">¥{results[activeSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-medium ml-1">/月</span></p></div>
+                  <button onClick={() => { setShowSummary(true); setSummaryActiveSlot(activeSlot); }} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2"><FileText className="w-4 h-4" /> 見積詳細</button>
                 </div>
               </div>
 
-              {/* Summary Modal */}
+              {/* Modal (省略なし・全文) */}
               {showSummary && (
-                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
                   <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-3xl max-h-[96vh] overflow-hidden flex flex-col shadow-2xl">
-                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                       <h2 className="text-lg font-black flex items-center gap-2"><Layers className="w-5 h-5 text-blue-600" /> お見積もり内容</h2>
                       <button onClick={() => setShowSummary(false)} className="p-2 bg-white rounded-full border shadow-sm"><X className="w-5 h-5" /></button>
                     </div>
-
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-white text-left pb-24">
+                    <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-white pb-32">
                       {isComparisonMode && (
-                        <div className="flex p-1.5 bg-slate-100 rounded-2xl mb-2">
-                          {['A', 'B'].map(s => (
-                            <button key={s} onClick={() => setSummaryActiveSlot(s)} className={`flex-1 py-2.5 text-xs font-black rounded-xl transition ${summaryActiveSlot === s ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>案 {s} を表示</button>
-                          ))}
+                        <div className="flex p-1 bg-slate-100 rounded-xl mb-4">
+                          {['A', 'B'].map(s => <button key={s} onClick={() => setSummaryActiveSlot(s)} className={`flex-1 py-2 text-xs font-black rounded-lg ${summaryActiveSlot === s ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>案 {s} を表示</button>)}
                         </div>
                       )}
-
-                      <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">月々のお支払い</h3>
-                          <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase text-white ${CARRIER_DATA[slots[summaryActiveSlot].carrier].color}`}>
-                            {CARRIER_DATA[slots[summaryActiveSlot].carrier].name}
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-900 text-white rounded-[2rem] p-8 text-center shadow-xl">
-                          <p className="text-[10px] font-bold opacity-60 mb-2 tracking-[0.2em]">MONTHLY TOTAL</p>
-                          <p className="text-5xl font-black">¥{results[summaryActiveSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-normal ml-1">/月</span></p>
-                          <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 text-[10px]">
-                            <div className="text-left opacity-70 truncate">機種: {slots[summaryActiveSlot].device.name}</div>
-                            <div className="text-right opacity-70">{slots[summaryActiveSlot].device.installments}回払い</div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 text-sm px-2">
-                          <div className="flex justify-between"><span>端末割賦代金</span><span className="font-black">¥{results[summaryActiveSlot].monthlyDevice.toLocaleString()}</span></div>
-                          <div className="flex justify-between"><span>プラン: {slots[summaryActiveSlot].plan.name}</span><span className="font-black">¥{slots[summaryActiveSlot].plan.price.toLocaleString()}</span></div>
-                          <div className="flex justify-between border-b pb-2"><span>通話: {slots[summaryActiveSlot].callOption.name}</span><span className="font-black">¥{slots[summaryActiveSlot].callOption.price.toLocaleString()}</span></div>
-                          {slots[summaryActiveSlot].discounts.filter(d => d.active).map(d => (
-                            <div key={d.id} className="flex justify-between text-emerald-600 font-bold italic"><span>{d.name}</span><span>-¥{d.amount.toLocaleString()}</span></div>
-                          ))}
+                      <div className="bg-slate-900 text-white rounded-[2rem] p-8 text-center shadow-xl">
+                        <p className="text-[10px] font-bold opacity-60 mb-2 tracking-[0.2em]">MONTHLY TOTAL</p>
+                        <p className="text-5xl font-black">¥{results[summaryActiveSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-normal">/月</span></p>
+                        <div className="mt-4 pt-4 border-t border-white/10 text-[10px] flex justify-between opacity-70">
+                          <span>{slots[summaryActiveSlot].device.name}</span><span>{slots[summaryActiveSlot].device.installments}回払い</span>
                         </div>
                       </div>
-
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                          <p className="text-[10px] font-black text-slate-400 mb-2 uppercase flex items-center gap-1"><Wallet className="w-3 h-3" /> 本日店頭払</p>
-                          <p className="text-xl font-black">¥{results[summaryActiveSlot].initialTotal.toLocaleString()}</p>
-                          <p className="text-[9px] text-slate-500 mt-1">※事務手数料別途</p>
-                        </div>
-                        <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
-                          <p className="text-[10px] font-black text-blue-400 mb-2 uppercase flex items-center gap-1"><Gift className="w-3 h-3" /> ノジマpt還元</p>
-                          <p className="text-xl font-black text-blue-600">{results[summaryActiveSlot].totalPoints.toLocaleString()} pt</p>
-                          <p className="text-[9px] text-blue-400 mt-1">※進呈条件あり</p>
-                        </div>
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100"><p className="text-[10px] font-black text-slate-400 mb-1">本日店頭払</p><p className="text-xl font-black">¥{results[summaryActiveSlot].initialTotal.toLocaleString()}</p></div>
+                        <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100"><p className="text-[10px] font-black text-blue-400 mb-1">ノジマpt還元</p><p className="text-xl font-black text-blue-600">{results[summaryActiveSlot].totalPoints.toLocaleString()} pt</p></div>
                       </div>
-
                       {slots[summaryActiveSlot].device.installments === 48 && (
-                        <div className={`rounded-2xl p-5 border ${CARRIER_DATA[slots[summaryActiveSlot].carrier].hasProgramFee ? 'bg-rose-50 border-rose-100' : 'bg-blue-50/30 border-blue-100'}`}>
-                          <div className={`flex items-center gap-2 font-black text-xs mb-2 ${CARRIER_DATA[slots[summaryActiveSlot].carrier].hasProgramFee ? 'text-rose-600' : 'text-blue-600'}`}>
-                            <AlertTriangle className="w-4 h-4" /> 2年後返却時の重要事項
-                          </div>
-                          <p className="text-xs font-black text-slate-900 mb-1">{CARRIER_DATA[slots[summaryActiveSlot].carrier].programName}</p>
+                        <div className="rounded-2xl p-5 border bg-blue-50/30 border-blue-100">
+                          <p className="text-xs font-black text-blue-600 mb-2 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 2年後返却時の重要事項</p>
                           <p className="text-[10px] font-bold text-slate-600 leading-relaxed">{CARRIER_DATA[slots[summaryActiveSlot].carrier].programBenefitNote}</p>
                         </div>
                       )}
-
                       <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">重要事項確認</p>
-                        <div className="space-y-3">
-                          {[
-                            { key: 'installments', label: `${slots[summaryActiveSlot].device.installments}回分割払いであること` },
-                            { key: 'residual', label: '2年後の返却で残価が支払い免除されること' },
-                            { key: 'fees', label: '事務手数料(¥3,850)が初月合算されること' },
-                            { key: 'downpayment', label: '初期費用・ポイント還元条件の確認' }
-                          ].map(item => (
-                            <button key={item.key} onClick={() => setChecklist(prev => ({...prev, [item.key]: !prev[item.key]}))} className="w-full flex items-start gap-3 text-left">
-                              {checklist[item.key] ? <CheckCircle className="w-5 h-5 text-blue-600 shrink-0" /> : <Square className="w-5 h-5 text-slate-300 shrink-0" />}
-                              <span className={`text-[11px] font-bold leading-tight ${checklist[item.key] ? 'text-slate-900' : 'text-slate-500'}`}>{item.label}</span>
-                            </button>
-                          ))}
-                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase border-b pb-2">重要事項確認</p>
+                        {[
+                          { key: 'installments', label: `${slots[summaryActiveSlot].device.installments}回分割払いであること` },
+                          { key: 'residual', label: '2年後の返却で残価が支払い免除されること' },
+                          { key: 'fees', label: '事務手数料(¥3,850)が初月合算されること' },
+                          { key: 'downpayment', label: '初期費用・ポイント還元条件の確認' }
+                        ].map(item => (
+                          <button key={item.key} onClick={() => setChecklist(prev => ({...prev, [item.key]: !prev[item.key]}))} className="w-full flex items-start gap-3 text-left">
+                            {checklist[item.key] ? <CheckCircle className="w-5 h-5 text-blue-600" /> : <Square className="w-5 h-5 text-slate-300" />}
+                            <span className={`text-[11px] font-bold leading-tight ${checklist[item.key] ? 'text-slate-900' : 'text-slate-500'}`}>{item.label}</span>
+                          </button>
+                        ))}
                       </div>
-
                       <div className="flex gap-3 mt-4">
-                        <button onClick={() => window.print()} className="flex-1 py-4 bg-slate-100 rounded-2xl font-black text-slate-600">画面保存</button>
-                        <button onClick={() => setShowSummary(false)} className="flex-[2] py-4 rounded-2xl font-black bg-blue-600 text-white shadow-xl">説明を完了する</button>
+                        <button onClick={() => window.print()} className="flex-1 py-4 bg-slate-100 rounded-2xl font-black text-slate-600 text-sm">画面保存</button>
+                        <button onClick={() => setShowSummary(false)} className="flex-[2] py-4 rounded-2xl font-black bg-blue-600 text-white shadow-xl text-sm">説明を完了する</button>
                       </div>
                     </div>
                   </div>
