@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Support Pro - Nojima Ver.</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        // Lucideアイコンのコンポーネント化
+        const Icon = ({ name, className }) => {
+            useEffect(() => {
+                lucide.createIcons();
+            }, [name, className]);
+            return <i data-lucide={name} className={className}></i>;
+        };
+
+        // --- データ定義 ---
+        const CARRIER_DATA = {
+            docomo: {
+                name: "docomo", type: "main", color: "bg-rose-600", borderColor: "border-rose-600", textColor: "text-rose-600",
+                programName: "いつでもカエドキプログラム",
+                programBenefitNote: "【特典利用料】22,000円。23ヶ月目に返却する際、プログラム利用料として別途お支払いが必要となります。",
+                hasProgramFee: true,
+                plans: [{ name: "ドコモ MAX", price: 8448 }, { name: "ドコモ mini (4GB)", price: 2500 }, { name: "ドコモ mini (10GB)", price: 3850 }, { name: "ahamo", price: 2970 }],
+                callOptions: [{ name: "なし", price: 0 }, { name: "5分通話無料", price: 880 }, { name: "かけ放題", price: 1980 }]
+            },
+            au: {
+                name: "au", type: "main", color: "bg-orange-500", borderColor: "border-orange-500", textColor: "text-orange-500",
+                programName: "スマホトクするプログラム",
+                programBenefitNote: "【特典利用料】22,000円。23ヶ月目に返却して残価を免除する際、別途特典利用料のお支払いが必要となります。",
+                hasProgramFee: true,
+                plans: [{ name: "auバリューリンク", price: 8008 }, { name: "シニアバリューリンク", price: 4048 }, { name: "スマホミニプラン", price: 4928 }],
+                callOptions: [{ name: "なし", price: 0 }, { name: "通話定額ライト", price: 880 }, { name: "通話定額", price: 1980 }]
+            },
+            softbank: {
+                name: "SoftBank", type: "main", color: "bg-slate-800", borderColor: "border-slate-800", textColor: "text-slate-800",
+                programName: "新トクするサポート",
+                programBenefitNote: "【特典利用料】22,000円。返却タイミングやプラン条件により、返却時に利用料が発生する場合があります。",
+                hasProgramFee: true,
+                plans: [{ name: "ペイトク無制限", price: 9625 }, { name: "メリハリ無制限＋", price: 7425 }, { name: "スマホデビュー (4GB)", price: 1078, note: "※14ヶ月目以降 +1,188円" }],
+                callOptions: [{ name: "なし", price: 0 }, { name: "準定額オプション+", price: 880 }, { name: "定額オプション+", price: 1980 }]
+            },
+            uq: {
+                name: "UQ mobile", type: "sub", color: "bg-blue-600", borderColor: "border-blue-600", textColor: "text-blue-600",
+                programName: "スマホトクするプログラム",
+                programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで、残価（25ヶ月目以降）の支払いが免除されます。",
+                hasProgramFee: false,
+                plans: [{ name: "コミコミバリュー", price: 3828 }, { name: "トクトクプラン2", price: 4048 }],
+                callOptions: [{ name: "なし", price: 0 }, { name: "通話放題ライト", price: 880 }, { name: "通話放題", price: 1980 }]
+            },
+            ymobile: {
+                name: "Y!mobile", type: "sub", color: "bg-red-500", borderColor: "border-red-500", textColor: "text-red-500",
+                programName: "新トクするサポート",
+                programBenefitNote: "【特典利用料】なし。23ヶ月目に端末を返却することで、残価（25ヶ月目以降）の支払いが免除されます。",
+                hasProgramFee: false,
+                plans: [{ name: "シンプル3 S", price: 3058 }, { name: "シンプル3 M", price: 4158 }, { name: "シンプル3 L", price: 5258 }],
+                callOptions: [{ name: "なし", price: 0 }, { name: "だれとでも定額+", price: 880 }, { name: "だれとでも定額+ (S)", price: 1980 }]
+            }
+        };
+
+        const DEFAULT_SLOT_STATE = {
+            carrier: 'docomo',
+            device: { name: 'iPhone 17', price: 134800, installments: 48, first24Monthly: 1, hasDownPayment: false, manualMode: false },
+            plan: { name: 'ドコモ MAX', price: 8448 },
+            callOption: { name: 'なし', price: 0 },
+            transferService: { name: 'なし', price: 0 },
+            discounts: [
+                { id: 1, name: '家族割 (3回線以上)', amount: 1100, active: false },
+                { id: 2, name: 'セット割 (光/Air)', amount: 1100, active: false }
+            ],
+            nojimaPoints: [{ id: 101, name: 'オプション加入', amount: 11000, active: true }]
+        };
+
+        const App = () => {
+            const [activeSlot, setActiveSlot] = useState('A');
+            const [isComparisonMode, setIsComparisonMode] = useState(false);
+            const [slots, setSlots] = useState({
+                A: { ...DEFAULT_SLOT_STATE },
+                B: { ...DEFAULT_SLOT_STATE, carrier: 'uq', plan: { name: 'コミコミバリュー', price: 3828 } }
+            });
+            const [showSummary, setShowSummary] = useState(false);
+            const [summaryActiveSlot, setSummaryActiveSlot] = useState('A');
+            const [checklist, setChecklist] = useState({
+                installments: false, residual: false, damage: false, fees: false, downpayment: false, pointTerms: false, programFee: false
+            });
+
+            const state = slots[activeSlot];
+
+            const updateSlot = (slotKey, field, value) => {
+                setSlots(prev => ({ ...prev, [slotKey]: { ...prev[slotKey], [field]: value } }));
+            };
+
+            const handleCarrierChange = (key) => {
+                const data = CARRIER_DATA[key];
+                updateSlot(activeSlot, 'carrier', key);
+                updateSlot(activeSlot, 'plan', { name: data.plans[0].name, price: data.plans[0].price });
+                updateSlot(activeSlot, 'callOption', { name: data.callOptions[0].name, price: data.callOptions[0].price });
+            };
+
+            const calculateResults = (slotData) => {
+                const downPayment = slotData.device.hasDownPayment ? 11000 : 0;
+                let monthlyDevice = 0;
+                let residual = 0;
+                if (slotData.device.installments === 48) {
+                    monthlyDevice = slotData.device.first24Monthly;
+                    residual = slotData.device.price - (slotData.device.first24Monthly * 23);
+                } else if (slotData.device.installments > 1) {
+                    monthlyDevice = Math.floor(slotData.device.price / slotData.device.installments);
+                }
+                const totalDiscounts = slotData.discounts.reduce((sum, d) => d.active ? sum + Number(d.amount) : sum, 0);
+                const monthlyTotal = (monthlyDevice + slotData.plan.price + slotData.callOption.price) - totalDiscounts;
+                const initialTotal = downPayment + slotData.transferService.price;
+                const totalPoints = slotData.nojimaPoints.reduce((sum, p) => p.active ? sum + Number(p.amount) : sum, 0);
+                return { monthlyTotal, monthlyDevice, residual, initialTotal, downPayment, totalPoints };
+            };
+
+            const results = { A: calculateResults(slots.A), B: calculateResults(slots.B) };
+            const currentCarrier = CARRIER_DATA[state.carrier];
+
+            const addEntry = (field, name, defaultAmount) => {
+                updateSlot(activeSlot, field, [...state[field], { id: Date.now(), name, amount: defaultAmount, active: true }]);
+            };
+            const updateEntry = (field, id, key, value) => {
+                updateSlot(activeSlot, field, state[field].map(item => item.id === id ? { ...item, [key]: value } : item));
+            };
+            const removeEntry = (field, id) => {
+                updateSlot(activeSlot, field, state[field].filter(item => item.id !== id));
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-900 pb-36 font-sans antialiased">
+                    <header className={`${isComparisonMode ? 'bg-[#002B6B]' : currentCarrier.color} text-white p-4 sticky top-0 z-50 shadow-lg transition-colors`}>
+                        <div className="max-w-2xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <Icon name="smartphone-nfc" className="w-5 h-5" />
+                                <h1 className="font-bold text-sm">Sales Support Pro <span className="text-[10px] opacity-75">Nojima Ver.</span></h1>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setIsComparisonMode(!isComparisonMode)} className={`px-3 py-1.5 rounded-full text-[10px] font-black border ${isComparisonMode ? 'bg-white text-blue-900' : 'bg-transparent border-white/40'}`}>
+                                    比較: {isComparisonMode ? 'ON' : 'OFF'}
+                                </button>
+                                <button onClick={() => window.location.reload()} className="p-1.5 bg-white/10 rounded-full"><Icon name="refresh-ccw" className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {isComparisonMode && (
+                        <div className="bg-white border-b sticky top-[52px] z-40 shadow-sm p-1 flex max-w-2xl mx-auto">
+                            <button onClick={() => setActiveSlot('A')} className={`flex-1 py-2 text-xs font-black rounded-xl ${activeSlot === 'A' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>案 A ¥{results.A.monthlyTotal.toLocaleString()}</button>
+                            <button onClick={() => setActiveSlot('B')} className={`flex-1 py-2 text-xs font-black rounded-xl ${activeSlot === 'B' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>案 B ¥{results.B.monthlyTotal.toLocaleString()}</button>
+                        </div>
+                    )}
+
+                    <main className="max-w-2xl mx-auto p-4 space-y-4">
+                        <section className="bg-white rounded-2xl p-4 shadow-sm border">
+                            <h2 className="text-[10px] font-black text-slate-400 mb-4 tracking-widest uppercase">Step 1. キャリア</h2>
+                            <div className="grid grid-cols-3 gap-2 mb-2">
+                                {Object.keys(CARRIER_DATA).filter(k => CARRIER_DATA[k].type === 'main').map(key => (
+                                    <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} text-white` : 'bg-slate-50 text-slate-400 border-transparent'}`}>{CARRIER_DATA[key].name}</button>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.keys(CARRIER_DATA).filter(k => CARRIER_DATA[k].type === 'sub').map(key => (
+                                    <button key={key} onClick={() => handleCarrierChange(key)} className={`py-3 rounded-xl border-2 font-bold text-[11px] ${state.carrier === key ? `${CARRIER_DATA[key].color} text-white` : 'bg-slate-50 text-slate-400 border-transparent'}`}>{CARRIER_DATA[key].name}</button>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-2xl p-4 shadow-sm border space-y-4">
+                            <div className="flex justify-between items-center"><h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Step 2. 端末設定</h2>
+                                <button onClick={() => updateSlot(activeSlot, 'device', { ...state.device, manualMode: !state.device.manualMode })} className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg">手入力切替</button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1"><span className="text-[9px] text-slate-400 font-black block">機種名</span>
+                                    {state.device.manualMode ? <input type="text" value={state.device.name} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, name: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold border" /> : 
+                                    <select value={state.device.name} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, name: e.target.value})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold border"><option>iPhone 17</option><option>iPhone 16</option><option>iPhone 16e</option><option>Google Pixel 9a</option></select>}
+                                </div>
+                                <div className="space-y-1"><span className="text-[9px] text-slate-400 font-black block text-right">総額 (税込)</span>
+                                    <input type="number" value={state.device.price} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, price: Number(e.target.value)})} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold text-right border" />
+                                </div>
+                            </div>
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                {[1, 24, 36, 48].map(n => <button key={n} onClick={() => updateSlot(activeSlot, 'device', {...state.device, installments: n})} className={`flex-1 py-2 rounded-lg text-[10px] font-black ${state.device.installments === n ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>{n === 1 ? '一括' : `${n}回`}</button>)}
+                            </div>
+                            {state.device.installments === 48 && (
+                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex justify-between">
+                                    <div><span className="text-[9px] text-blue-400 font-black">23ヶ月目までの月額</span><input type="number" value={state.device.first24Monthly} onChange={(e) => updateSlot(activeSlot, 'device', {...state.device, first24Monthly: Number(e.target.value)})} className="w-24 p-2 bg-white rounded-lg border text-sm font-black text-blue-600" /></div>
+                                    <div className="text-right"><span className="text-[9px] text-blue-400 font-black">25ヶ月目以降(免除額)</span><p className="text-sm font-black text-slate-500 italic">¥{results[activeSlot].residual.toLocaleString()}</p></div>
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="bg-white rounded-2xl p-4 shadow-sm border space-y-4">
+                            <h2 className="text-[10px] font-black text-slate-400 tracking-widest uppercase">Step 3. プラン & 通話</h2>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="col-span-2"><span className="text-[9px] text-slate-400 font-black block">プラン名</span>
+                                        <div className="flex gap-2"><input type="text" value={state.plan.name} onChange={(e) => updateSlot(activeSlot, 'plan', { ...state.plan, name: e.target.value })} className="flex-1 p-3 bg-slate-50 rounded-xl text-xs font-bold border" />
+                                            <select onChange={(e) => { const p = currentCarrier.plans.find(x => x.name === e.target.value); if(p) updateSlot(activeSlot, 'plan', { name: p.name, price: p.price }); }} className="w-24 border rounded-xl text-[10px] font-bold" value=""><option value="" disabled>履歴</option>{currentCarrier.plans.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}</select>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2"><span className="text-[9px] text-slate-400 font-black block">月額料金</span><input type="number" value={state.plan.price} onChange={(e) => updateSlot(activeSlot, 'plan', { ...state.plan, price: Number(e.target.value) })} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-bold border" /></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                                    {currentCarrier.callOptions.map(o => <button key={o.name} onClick={() => updateSlot(activeSlot, 'callOption', { name: o.name, price: o.price })} className={`p-2 rounded-xl border-2 font-bold text-[10px] ${state.callOption.name === o.name ? 'border-slate-800 bg-slate-50' : 'bg-slate-50 border-transparent text-slate-400'}`}>{o.name}<span className="block opacity-70">¥{o.price.toLocaleString()}</span></button>)}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-2xl p-4 shadow-sm border">
+                            <div className="flex justify-between items-center mb-3"><h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Step 4. 各種割引</h2>
+                                <button onClick={() => addEntry('discounts', '新規割引', 0)} className="text-emerald-600 bg-emerald-50 p-1 rounded-lg"><Icon name="plus-circle" className="w-4 h-4" /></button>
+                            </div>
+                            <div className="space-y-2">
+                                {state.discounts.map(d => (
+                                    <div key={d.id} className={`flex items-center gap-2 p-3 rounded-xl border ${d.active ? 'bg-emerald-50/30 border-emerald-200' : 'bg-slate-50'}`}>
+                                        <button onClick={() => updateEntry('discounts', d.id, 'active', !d.active)} className={d.active ? 'text-emerald-500' : 'text-slate-300'}><Icon name={d.active ? "check-square" : "square"} className="w-5 h-5" /></button>
+                                        <input type="text" value={d.name} onChange={(e) => updateEntry('discounts', d.id, 'name', e.target.value)} className="flex-1 bg-transparent text-[11px] font-bold" />
+                                        <div className="flex items-center gap-1 font-black text-xs text-slate-400">¥<input type="number" value={d.amount} onChange={(e) => updateEntry('discounts', d.id, 'amount', Number(e.target.value))} className="w-16 p-1 bg-white border rounded text-right text-slate-900" /></div>
+                                        <button onClick={() => removeEntry('discounts', d.id)} className="text-slate-300"><Icon name="trash-2" className="w-4 h-4" /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-2xl p-4 shadow-sm border">
+                            <h2 className="text-[10px] font-black text-slate-400 mb-3 tracking-widest uppercase">Step 5. 初期費用</h2>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button onClick={() => updateSlot(activeSlot, 'device', {...state.device, hasDownPayment: !state.device.hasDownPayment})} className={`p-3 rounded-xl border-2 font-bold text-[11px] ${state.device.hasDownPayment ? 'border-rose-500 text-rose-600 bg-rose-50' : 'bg-slate-50 border-transparent'}`}>店頭頭金 ¥11,000</button>
+                                <select value={state.transferService.price} onChange={(e) => { const names = { "0": "なし", "15000": "データ移行(同OS)", "20000": "データ移行(異OS)" }; updateSlot(activeSlot, 'transferService', { name: names[e.target.value], price: Number(e.target.value) }); }} className="p-3 bg-slate-50 rounded-xl text-[11px] font-bold border-2 border-transparent">
+                                    <option value="0">データ移行なし</option><option value="15000">データ移行(同OS) ¥15,000</option><option value="20000">データ移行(異OS) ¥20,000</option>
+                                </select>
+                            </div>
+                        </section>
+                    </main>
+
+                    <footer className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t p-4 z-50">
+                        <div className="max-w-2xl mx-auto flex justify-between items-center gap-6">
+                            <div><p className="text-[9px] font-black text-slate-400 tracking-widest">月額目安 (案{activeSlot})</p><p className="text-3xl font-black">¥{results[activeSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-medium ml-1">/月</span></p></div>
+                            <button onClick={() => { setShowSummary(true); setSummaryActiveSlot(activeSlot); }} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-sm flex items-center gap-2 shadow-xl"><Icon name="file-text" className="w-4 h-4" />見積詳細</button>
+                        </div>
+                    </footer>
+
+                    {showSummary && (
+                        <div className="fixed inset-0 z-[100] bg-slate-900/60 flex items-end justify-center">
+                            <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] p-6 max-h-[90vh] overflow-y-auto space-y-6">
+                                <div className="flex justify-between items-center border-b pb-4"><h2 className="text-lg font-black flex items-center gap-2"><Icon name="layers" className="text-blue-600 w-5 h-5" />見積内容</h2><button onClick={() => setShowSummary(false)} className="p-2 border rounded-full"><Icon name="x" className="w-5 h-5" /></button></div>
+                                <div className="bg-slate-900 text-white rounded-3xl p-8 text-center space-y-2 shadow-xl">
+                                    <p className="text-[10px] opacity-60 tracking-widest uppercase">Monthly Total</p>
+                                    <p className="text-5xl font-black">¥{results[summaryActiveSlot].monthlyTotal.toLocaleString()}<span className="text-xs font-normal">/月</span></p>
+                                    <div className="flex justify-between text-[10px] opacity-70 border-t border-white/10 pt-4"><span>{slots[summaryActiveSlot].device.name}</span><span>{slots[summaryActiveSlot].device.installments}回払い</span></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 text-center">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border"><p className="text-[10px] font-black text-slate-400">本日店頭払</p><p className="text-xl font-black">¥{results[summaryActiveSlot].initialTotal.toLocaleString()}</p></div>
+                                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100"><p className="text-[10px] font-black text-blue-400">ノジマpt還元</p><p className="text-xl font-black text-blue-600">{results[summaryActiveSlot].totalPoints.toLocaleString()} pt</p></div>
+                                </div>
+                                {slots[summaryActiveSlot].device.installments === 48 && (
+                                    <div className="bg-rose-50 p-5 rounded-2xl border border-rose-100 space-y-1">
+                                        <p className="text-xs font-black text-rose-600 flex items-center gap-1"><Icon name="alert-triangle" className="w-4 h-4" />2年後返却時の重要事項</p>
+                                        <p className="text-[11px] font-bold text-slate-600 leading-relaxed">{CARRIER_DATA[slots[summaryActiveSlot].carrier].programBenefitNote}</p>
+                                    </div>
+                                )}
+                                <div className="space-y-3 bg-slate-50 p-5 rounded-2xl">
+                                    {['installments', 'residual', 'fees', 'downpayment'].map((k) => (
+                                        <button key={k} onClick={() => setChecklist(prev => ({...prev, [k]: !prev[k]}))} className="flex items-start gap-3 w-full text-left">
+                                            <Icon name={checklist[k] ? "check-circle" : "square"} className={`w-5 h-5 ${checklist[k] ? 'text-blue-600' : 'text-slate-300'}`} />
+                                            <span className={`text-xs font-bold ${checklist[k] ? 'text-slate-900' : 'text-slate-500'}`}>
+                                                {k === 'installments' && `${slots[summaryActiveSlot].device.installments}回分割払いであること`}
+                                                {k === 'residual' && '2年後の返却で残価が支払い免除されること'}
+                                                {k === 'fees' && '事務手数料(¥3,850)が初月合算されること'}
+                                                {k === 'downpayment' && '初期費用・ポイント還元条件の確認'}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <button onClick={() => setShowSummary(false)} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg">説明を完了する</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
