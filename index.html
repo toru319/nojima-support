@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', 'sans-serif'; -webkit-tap-highlight-color: transparent; }
@@ -20,30 +20,12 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // アイコンコンポーネント
-        const Icon = ({ name, className = "w-4 h-4", ...props }) => {
-            const iconRef = useRef(null);
-            useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }, [name]);
-            return <i data-lucide={name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()} className={className} {...props}></i>;
-        };
-
-        const CheckCircle = (p) => <Icon name="CheckCircle" {...p} />;
-        const RefreshCcw = (p) => <Icon name="RefreshCcw" {...p} />;
-        const PlusCircle = (p) => <Icon name="PlusCircle" {...p} />;
-        const SmartphoneNfc = (p) => <Icon name="SmartphoneNfc" {...p} />;
-        const Trash2 = (p) => <Icon name="Trash2" {...p} />;
-        const CheckSquare = (p) => <Icon name="CheckSquare" {...p} />;
-        const Square = (p) => <Icon name="Square" {...p} />;
-        const Wallet = (p) => <Icon name="Wallet" {...p} />;
-        const Gift = (p) => <Icon name="Gift" {...p} />;
-        const FileText = (p) => <Icon name="FileText" {...p} />;
-        const Layers = (p) => <Icon name="Layers" {...p} />;
-        const X = (p) => <Icon name="X" {...p} />;
-        const AlertTriangle = (p) => <Icon name="AlertTriangle" {...p} />;
+        // 修正ポイント2: lucideReact オブジェクトから必要なアイコンを抽出
+        const { 
+          CheckCircle, RefreshCcw, PlusCircle, SmartphoneNfc, 
+          Trash2, CheckSquare, Square, Wallet, Gift, 
+          FileText, Layers, X, AlertTriangle 
+        } = lucideReact;
 
         const CARRIER_DATA = {
           docomo: {
@@ -239,7 +221,7 @@
                   </div>
                 </section>
 
-                {/* Step 4. 各種割引 (削除機能追加) */}
+                {/* Step 4. 各種割引 */}
                 <section className="bg-white rounded-2xl p-4 border border-slate-200">
                   <div className="flex justify-between items-center mb-3">
                     <h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 4. 各種割引</h2>
@@ -268,7 +250,7 @@
                   </div>
                 </section>
 
-                {/* Step 6. ノジマポイント (削除機能追加) */}
+                {/* Step 6. ノジマポイント */}
                 <section className="bg-white rounded-2xl p-4 border border-slate-200">
                   <div className="flex justify-between items-center mb-3">
                     <h2 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><div className="w-1 h-3 bg-blue-500 rounded-full"></div> Step 6. ノジマポイント</h2>
@@ -295,7 +277,7 @@
                 </div>
               </div>
 
-              {/* Modal (省略なし・全文) */}
+              {/* Modal */}
               {showSummary && (
                 <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center">
                   <div className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-3xl max-h-[96vh] overflow-hidden flex flex-col shadow-2xl">
